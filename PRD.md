@@ -95,3 +95,49 @@ Technology selection will be finalized during the Spec Kit planning phase.
 5. All simulated executions are recorded.
 6. Disconnections and stale market data are visibly reported.
 7. SL/TP triggers do not imply guaranteed execution prices.
+
+## FR-007 — Multi-Algorithm Management
+
+Users can create, configure, start, stop,
+and monitor multiple algorithm instances
+from the web interface.
+
+Requirements:
+
+- Select a supported algorithm type.
+- Configure instrument, strategy parameters,
+  SL, TP, quantity, and execution mode.
+- Persist configurations in the database.
+- Load configurations before execution.
+- Run multiple instances concurrently.
+- Maintain independent positions, P&L,
+  risk state, and execution history.
+- Start and stop individual instances.
+- Do not silently modify running instances
+  when saved configurations change.
+- Prevent unintended duplicate runs.
+- Recover and reconcile state after restarts.
+- Prevent duplicate order submissions.
+- Use paper trading by default.
+- Share market-data updates where appropriate.
+- Monitor risk independently of strategy frequency.
+- Handle stale market data safely.
+
+Initial strategy: Short Straddle.
+
+Future strategies:
+
+- Short Strangle
+- Intraday Directional
+- Positional
+
+Acceptance criteria:
+
+1. Create three configurations from the UI.
+2. Configurations survive application restart.
+3. Two configurations can run concurrently
+   in paper-trading mode.
+4. Stopping one does not stop another.
+5. Each instance has independent risk state.
+6. Recovery prevents duplicate execution.
+7. UI displays individual lifecycle status.
