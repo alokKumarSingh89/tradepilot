@@ -8,6 +8,14 @@
 
 **Input**: User description: "Read PRD.md and the existing TradePilot Constitution. Create a NEW Feature 003: Multi-Timeframe Indicator-Based Strategy Engine. Extend TradePilot to support UI-configurable indicator-based trading algorithms. Requirements: 1. Users can configure two or more timeframes per algorithm. 2. Each timeframe has an explicit role: primary trend, optional confirmation, or entry/exit. 3. Support indicator configuration per timeframe, beginning with MACD and Heikin Ashi. 4. Indicator parameters must be configurable. 5. Allow conditions such as MACD crossover, MACD slope/bend, histogram changes, and HA candle colour changes. 6. Support a primary trade governed by higher-timeframe conditions. 7. Support independent lower-timeframe trades that follow the configured higher-timeframe directional bias. 8. Allow supporting trades to enter and exit multiple times while the higher-timeframe bias remains valid. 9. Define configurable behaviour when the primary trend reverses. 10. Maintain independent position state, risk rules, execution history, and P&L for main and supporting trades. 11. Support an optional shared risk budget across related trades. 12. Persist all strategy and indicator configuration in PostgreSQL. 13. Capture an immutable configuration snapshot for each run. 14. Evaluate indicators using timestamped, appropriately completed candles; define incomplete-candle behaviour explicitly. 15. Prevent duplicate signal processing and look-ahead bias. 16. Use paper trading by default. Preserve Features 001 and 002. Generate business requirements, user stories, acceptance criteria, and edge cases. Identify ambiguous trading rules for clarification. Do not generate application code or a technical plan."
 
+## Architecture and ownership constraints
+
+Feature 002 remains the sole authority for `AlgorithmRun` lifecycle transitions, duplicate-run prevention, restart reconciliation, and recovery authorization. Feature 003 does not introduce a competing lifecycle state machine or independently authorize pause, failure, restart, recovery, or activation of the parent `AlgorithmRun`.
+
+Feature 003 owns the logical main/supporting trade relationships, strategy decisions, candle processing, indicator calculations, directional bias, signal generation, and strategy-specific runtime state. The shared execution and position records remain authoritative for actual orders, fills, quantities, and open exposure. Strategy state must be reconciled against authoritative execution records rather than assuming that an emitted exit signal means a position has closed.
+
+During recovery or reconciliation, Feature 003 may reconstruct derived strategy state only as part of the Feature 002-coordinated recovery flow. No new strategy entries are permitted during recovery, existing exposure remains subject to the approved recovery and risk contract, and Feature 002 must complete reconciliation and explicitly authorize resumption before any strategy evaluation may continue. All restart/resume operations must respect duplicate-run prevention.
+
 ## Clarifications
 
 ### Session 2026-10-03
@@ -156,6 +164,9 @@ A user expects the strategy configuration, run snapshot, and execution history t
 - **FR-018**: The system MUST treat primary and supporting trades as separate execution entities while still allowing them to share an overall strategy context and optional risk budget.
 - **FR-019**: The system MUST allow users to review the strategy configuration, indicator settings, and run snapshot without altering the executing strategy state.
 - **FR-020**: The system MUST preserve the existing behavior of Features 001 and 002 and treat this feature as an additive strategy-engine capability rather than a replacement or redesign of earlier features.
+- **FR-020A**: The system MUST NOT introduce a competing `AlgorithmRun` lifecycle state machine in Feature 003, and Feature 003 MUST NOT independently authorize pause, failure, restart, recovery, or activation of the parent `AlgorithmRun`.
+- **FR-020B**: Feature 003 MUST reconcile main/supporting trade strategy state against the authoritative Feature 002 run, risk, and execution records rather than assuming that an emitted signal closes or reopens a position.
+- **FR-020C**: During recovery or reconciliation, Feature 003 MUST NOT create new strategy entries until Feature 002 explicitly authorizes resumption, and all restart/resume operations MUST respect Feature 002 duplicate-run prevention.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -197,10 +208,10 @@ A user expects the strategy configuration, run snapshot, and execution history t
 
 The following trading behaviours require stakeholder confirmation before implementation planning:
 
-- The exact primary trend reversal policy should be defined, including whether a reversal closes all related supporting trades immediately, pauses the strategy, or requires a user-confirmed override.
+- The exact primary trend reversal policy should be defined, including whether a reversal closes all related supporting trades immediately, pauses the strategy, or requires a user-confirmed override; however, the actual run-level recovery and activation decision remains the responsibility of Feature 002.
 - The precise rules for lower-timeframe trade entry and exit repetition should be clarified, including how many repeated entries are allowed within a valid higher-timeframe bias window and whether they are capped by total exposure.
 - The exact definition of a “completed candle” should be confirmed for each timeframe, including how to handle delayed updates, partial bars, out-of-order data, and session boundary transitions.
-- The shared risk budget override rules should be clarified, including whether the budget is allocated globally across all trade legs or by trade family within a strategy.
+- The shared risk budget override rules should be clarified, including whether the budget is allocated globally across all trade legs or by trade family within a strategy. Risk enforcement remains in the shared risk engine, while Feature 003 defines strategy policy context and requests actions.
 - The exact set of MACD and Heikin Ashi conditions should be finalized for MVP, including the degree of condition complexity allowed per timeframe.
 
 ## Notes on Scope

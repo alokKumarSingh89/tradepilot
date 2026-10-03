@@ -26,6 +26,14 @@ Feature 003 adds the following runtime interfaces:
 - SharedRiskBudget
 - CandleBucket
 
+## Authority and boundary contract
+
+The Feature 002 lifecycle contract remains authoritative for `AlgorithmRun` transitions, duplicate-run prevention, restart reconciliation, and recovery authorization. Feature 003 may expose derived evaluation statuses for strategy analysis, but those statuses do not independently authorize pause, failure, restart, recovery, or activation of the parent run.
+
+Feature 003 owns signal generation, indicator evaluation, higher-timeframe directional bias, and logical main/supporting trade strategy state. The shared risk engine remains authoritative for risk enforcement; the shared execution engine remains authoritative for order submission, idempotency, and order reconciliation. Strategy state must be reconciled against the authoritative execution and risk records rather than assuming that an emitted exit signal means a position has closed.
+
+During recovery, Feature 003 may reconstruct derived strategy state only after Feature 002 has completed reconciliation and explicitly authorized resumption. No new strategy entries are permitted during recovery, and all restart/resume operations must respect duplicate-run prevention.
+
 ## Runtime responsibilities
 
 The multi-timeframe engine is responsible for:

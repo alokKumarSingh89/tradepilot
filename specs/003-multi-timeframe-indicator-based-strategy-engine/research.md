@@ -4,7 +4,7 @@
 
 **Decision**: The multi-timeframe engine will be implemented as a runtime extension of the existing algorithm worker and lifecycle model. It will reuse the Feature 002 run orchestration, configuration versioning, market-data distribution, idempotent execution processing, run snapshots, and event-driven risk workflow, while adding a strategy-specific runtime layer for timeframe evaluation, indicators, and trade-leg state.
 
-**Rationale**: The Product Requirements and the Feature 002 architecture both require clear separation of responsibilities, independent state, and lifecycle safety. Maintaining a single orchestration system reduces cross-feature drift and minimizes duplicate governance, persistence, and recovery logic.
+**Rationale**: The Product Requirements and the Feature 002 architecture both require clear separation of responsibilities, independent state, and lifecycle safety. Maintaining a single orchestration system reduces cross-feature drift and minimizes duplicate governance, persistence, and recovery logic. Feature 003 does not own the parent `AlgorithmRun` lifecycle; it owns the derived strategy evaluation layer and must reconcile against the authoritative Feature 002 lifecycle, risk, and execution records.
 
 **Alternatives considered**:
 
@@ -101,9 +101,9 @@
 
 ## Decision 10: Feature 002 compatibility changes are additive and explicit
 
-**Decision**: The build will not rewrite Feature 002. Instead, it adds a strategy engine mode to the existing algorithm configuration and worker contracts. Proposed compatibility changes are documented as extension points rather than replacements.
+**Decision**: The build will not rewrite Feature 002. Instead, it adds a strategy engine mode to the existing algorithm configuration and worker contracts. Proposed compatibility changes are documented as extension points rather than replacements. Feature 003 may reconstruct derived strategy state during recovery, but it may not independently authorize new entries, restart, recovery, or activation; those actions remain controlled by Feature 002 after duplicate-run prevention and reconciliation pass.
 
-**Rationale**: The user requirement explicitly says not to silently rewrite Feature 002 and to preserve the existing feature directories and filenames. This approach maintains backward compatibility while making the new strategy runtime available in a controlled way.
+**Rationale**: The user requirement explicitly says not to silently rewrite Feature 002 and to preserve the existing feature directories and filenames. This approach maintains backward compatibility while making the new strategy runtime available in a controlled way and keeps lifecycle authority with the run-management layer.
 
 **Alternatives considered**:
 

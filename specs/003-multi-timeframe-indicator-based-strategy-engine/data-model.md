@@ -4,6 +4,12 @@
 
 The model extends the approved Feature 002 algorithm and run structure rather than replacing it. The new data model adds strategy-specific runtime state for multi-timeframe rule evaluation, indicator validation, trade-leg independence, and signal auditability while staying compatible with the existing configuration, run, risk, lifecycle, and order tables.
 
+## Ownership and lifecycle precedence
+
+Feature 002 remains the sole authority for `AlgorithmRun` lifecycle transitions, duplicate-run prevention, run reconciliation, and recovery authorization. Feature 003 may persist derived strategy evaluation state, but that state is subordinate to the authoritative Feature 002 lifecycle and must never independently transition the parent run into an active state.
+
+The shared risk engine remains authoritative for risk enforcement. Feature 003 may define risk policies, thresholds, and request context, but it must not create a competing risk execution mechanism. The shared execution engine remains authoritative for orders, fills, idempotency, and reconciliation. Strategic trade-leg state must reconcile against authoritative execution records rather than assuming that a signal automatically implies an order or a position closure.
+
 ## Shared Entities Extended from Feature 002
 
 ### 1. AlgorithmConfiguration
@@ -60,9 +66,10 @@ Proposed extension fields:
 
 Validation rules:
 
-- strategy_runtime_state must be derived from independent strategy evaluation and cannot silently overwrite the core lifecycle state.
+- strategy_runtime_state is a derived strategy-evaluation state only and cannot silently overwrite the authoritative core lifecycle state controlled by Feature 002.
 - primary_bias remains a derived value from the latest valid higher-timeframe condition.
 - The run must retain the original configuration snapshot used to start the strategy engine.
+- Feature 003 strategy state must not independently authorize pause, failure, restart, recovery, or activation of the parent `AlgorithmRun`.
 
 ### 3. RunSnapshot
 
@@ -103,6 +110,7 @@ Validation rules:
 
 - used_shared_risk must never exceed the configured shared_risk_budget when the shared budget is enabled.
 - Each trade leg keeps its own independent risk state and contributes to the summary only through the strategy runtime context.
+- The shared risk engine remains the authoritative enforcement layer; Feature 003 defines policy context and requested actions but must not create a competing risk execution mechanism.
 
 ## New Feature 003 Entities
 

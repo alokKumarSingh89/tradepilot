@@ -10,6 +10,12 @@ This feature adds an indicator-based multi-timeframe strategy runtime to the app
 
 The design preserves the existing modular monolith and dedicated worker model, adds a strategy-engine runtime layer that reads immutable configuration snapshots, and keeps all feature-specific state explicit and auditable. It is additive by design and does not replace the earlier algorithm-management architecture.
 
+## Ownership and authority boundaries
+
+Feature 002 remains the sole authority for `AlgorithmRun` lifecycle transitions, duplicate-run prevention, restart reconciliation, and recovery authorization. Feature 003 is explicitly limited to candle processing, indicator calculation, strategy evaluation, directional bias, signal generation, and logical main/supporting trade strategy state. The shared risk engine remains the authoritative enforcement layer for risk decisions, and the shared execution engine remains authoritative for order submission, idempotency, and reconciliation.
+
+Feature 003 may define risk policies and request actions, but it must not create a competing risk execution mechanism or a competing order submission path. Strategy runtime state may be persisted for audit and recovery, but that state must never independently authorize pause, failure, restart, recovery, or activation of the parent `AlgorithmRun`.
+
 ## Technical Context
 
 **Language/Version**: Python 3.12+, FastAPI, TypeScript 5.x, React 18/19-compatible frontend, SQLAlchemy 2, Alembic
