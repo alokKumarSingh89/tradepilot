@@ -37,6 +37,7 @@ A user can start more than one algorithm instance at the same time and monitor e
 
 1. **Given** two valid algorithm configurations exist, **When** the user starts both in paper-trading mode, **Then** both algorithms enter an active running state and remain independently tracked.
 2. **Given** one running algorithm is stopped, **When** the user checks the system, **Then** only the selected run changes state and the other run continues without interruption.
+3. **Given** a running algorithm has an open position, **When** the user requests a stop, **Then** the system asks whether to keep or close the position before finalizing the stop action and updates the run status only after the user’s decision.
 
 ---
 
@@ -50,8 +51,9 @@ A user expects the system to retain saved configuration and execution state so t
 
 **Acceptance Scenarios**:
 
-1. **Given** an algorithm has been saved and previously started, **When** the application restarts, **Then** the system restores the persisted configuration and last known execution state without creating a duplicate active run.
+1. **Given** an algorithm has been saved and previously started, **When** the application restarts, **Then** the system restores the persisted configuration and last known execution state without creating a duplicate active run and presents the run as recoverable for user confirmation.
 2. **Given** a user attempts to start an algorithm run that is already active, **When** they trigger the action again, **Then** the system prevents the duplicate run and surfaces an understandable status message.
+3. **Given** the application restarts after an interrupted run, **When** the user reviews the recovered state, **Then** the system offers the choice to recover, restart, or discard the interrupted run rather than auto-resuming it silently.
 
 ---
 
@@ -67,6 +69,7 @@ A user can review a configuration’s history, compare versions, and inspect eac
 
 1. **Given** a saved algorithm configuration is updated, **When** the user saves the new version, **Then** the system retains the prior version and records the change as part of the configuration history.
 2. **Given** a run is active, **When** the user views history or snapshots, **Then** the system shows the run-specific state without modifying the running algorithm or its risk state.
+3. **Given** a saved algorithm configuration is active in a running instance, **When** the user edits and saves the configuration, **Then** the system creates a new version for future use while leaving the current active run unchanged and unaffected.
 
 ---
 
@@ -99,6 +102,10 @@ A user can review a configuration’s history, compare versions, and inspect eac
 - **FR-013**: The system MUST provide a user-visible status for each algorithm instance, including its lifecycle stage and whether it is active, stopped, or recovering.
 - **FR-014**: The system MUST allow users to review individual run activity and risk history without changing the behavior of other algorithm instances.
 - **FR-015**: The system MUST prevent live positions or market orders from being affected by saving or editing a configuration that is not actively trading.
+- **FR-016**: The system MUST prompt the user to choose whether to keep or close an open position before finalizing a stop request for an algorithm run that still has active positions.
+- **FR-017**: The system MUST block a new run start when the same algorithm configuration is already active for that user and present the duplicate run as a rejected action with an explanatory status message.
+- **FR-018**: The system MUST allow a user to save a new version of an active algorithm configuration without altering the behavior of the currently running instance; the active run remains bound to its original version until a separate restart or explicit reactivation decision.
+- **FR-019**: The system MUST detect interrupted or incomplete run state after restart and present the user with an explicit recovery choice to recover, restart, or discard the run without creating an unintended duplicate active execution.
 
 ### Key Entities _(include if feature involves data)_
 
@@ -130,6 +137,10 @@ A user can review a configuration’s history, compare versions, and inspect eac
 - The system records enough state to recover a run safely after restart without assuming that the risk engine can be resumed without validation.
 - The feature is limited to management and monitoring behavior; it does not include live broker execution or direct market-order placement.
 - Configuration edits may be saved as new versions, but active runs should not silently change state as a consequence of a saved configuration change unless a separate business decision is later approved.
+- When a stop request is issued for a run with open positions, the system asks the user whether to keep or close the position before finalizing the stop action; it does not silently force a position decision.
+- Duplicate run prevention is based on the active state of the same algorithm configuration for the same user; a second start action for that active configuration is rejected as a duplicate.
+- Saving a new version of an active configuration does not alter the current running instance; the current run remains bound to its original version until a new run is started from the updated configuration.
+- After restart, the system restores the last known run information and asks the user to choose whether to recover, restart, or discard the interrupted run rather than silently resuming or duplicating execution.
 - The system distinguishes between configuration-level metadata and run-level execution state, with each one treated as a separate concern for recovery and monitoring.
 
 ## Notes on Unresolved Business Decisions
@@ -137,8 +148,6 @@ A user can review a configuration’s history, compare versions, and inspect eac
 The following business decisions remain open and should be confirmed before implementation planning:
 
 - The exact lifecycle state model for algorithm runs should be confirmed, including whether “created,” “ready,” “running,” “stopped,” “failed,” and “recovered” are required states or whether the system uses a simpler set.
-- The product must decide whether editing a saved configuration creates a new version automatically or requires a deliberate “save as new version” action.
-- The rules for duplicate-run prevention should be clarified: whether the duplicate check is based on a configuration ID, a user-defined run name, or a unique run token created for each start action.
 - The UI requirements for monitoring individual runs should be defined more precisely, including whether users need a list view, a detail view, or both.
 - The acceptable limits for concurrent algorithms should be confirmed, especially whether the platform supports a user-defined cap or a system-wide limit.
 - The exact requirements for run snapshots should be clarified, including whether they are generated only on start or also on lifecycle transitions and risk threshold events.
