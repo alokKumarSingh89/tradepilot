@@ -141,3 +141,114 @@ Acceptance criteria:
 5. Each instance has independent risk state.
 6. Recovery prevents duplicate execution.
 7. UI displays individual lifecycle status.
+
+## FR-008 — Multi-Timeframe Indicator-Based Strategy Engine
+
+### Objective
+
+TradePilot must allow users to create indicator-based trading algorithms through the UI, configure multiple timeframes, and execute main and supporting trades independently based on configured conditions.
+
+### FR-008.1 — Multi-Timeframe Configuration
+
+- Users can configure two or more timeframes per algorithm.
+- Each timeframe must have a defined responsibility:
+  - Primary Trend (Higher Timeframe).
+  - Confirmation (Optional).
+  - Entry/Exit (Lower Timeframe).
+- Timeframes must be configurable from the UI.
+- Initially support 5M, 15M, 30M, 1H, 4H and 1D.
+
+### FR-008.2 — Indicator Configuration
+
+Users must be able to select indicators independently for each timeframe.
+
+Initial supported indicators:
+
+- MACD (configurable Fast, Slow and Signal periods).
+- Heikin Ashi (HA).
+
+The system must support configurable conditions such as:
+
+- MACD crossover.
+- MACD histogram direction and colour changes.
+- MACD slope/bend changes (using an explicitly defined calculation).
+- Heikin Ashi bullish/bearish candle.
+- Heikin Ashi candle colour change from the previous candle.
+
+Additional indicators (EMA, RSI, Supertrend, etc.) must be extensible without redesigning the complete strategy engine.
+
+### FR-008.3 — Primary Trade (Higher Timeframe)
+
+- The primary trade follows the configured higher-timeframe trend.
+- The algorithm determines bullish, bearish or neutral market conditions.
+- Primary trade entry and exit conditions must be configurable.
+- The primary trade maintains independent position and P&L information.
+
+### FR-008.4 — Supporting Trade (Lower Timeframe)
+
+- Supporting trades follow the configured higher-timeframe directional bias.
+- Lower-timeframe indicators determine supporting trade entries and exits.
+- Multiple supporting trades may occur during one higher-timeframe trend.
+- Supporting trades must maintain independent entry, exit, quantity, P&L and risk information.
+- The system must prevent duplicate entries from the same signal.
+- The behaviour when the primary trend reverses must be configurable.
+
+### FR-008.5 — Risk Management
+
+- Support independent SL and TP for main and supporting trades.
+- Support optional shared risk limits across related trades.
+- Risk monitoring must operate independently of candle-based strategy evaluation.
+- Market-data updates should trigger risk evaluation without waiting for the next strategy candle.
+- Actual exit prices may differ from configured thresholds due to slippage and execution latency.
+
+### FR-008.6 — Configuration Persistence
+
+- All timeframe, indicator, entry, exit and risk configurations must be persisted in PostgreSQL.
+- The algorithm worker retrieves configuration from the database before execution.
+- Each execution must use an immutable configuration snapshot.
+- Configuration changes must not silently modify running algorithms.
+
+### FR-008.7 — Candle and Signal Processing
+
+- Candle timestamps and timeframe boundaries must be consistent.
+- The system must explicitly define whether conditions use completed or incomplete candles.
+- Prevent look-ahead bias during strategy evaluation and backtesting.
+- Handle missing candles, delayed ticks and WebSocket disconnections.
+- Maintain an auditable signal and execution history.
+
+### FR-008.8 — Example Trading Configuration
+
+**Algorithm:** NIFTY Multi-Timeframe Trend Following
+
+| Configuration          | Value                   |
+| ---------------------- | ----------------------- |
+| Primary Timeframe      | 4H                      |
+| Confirmation Timeframe | 1H                      |
+| Supporting Timeframe   | 15M                     |
+| Indicators             | MACD + Heikin Ashi      |
+| Main Trade             | Based on 4H trend       |
+| Supporting Trade       | Based on 15M entry/exit |
+| Direction Filter       | Higher-timeframe trend  |
+| Execution Mode         | Paper Trading (MVP)     |
+
+### Acceptance Criteria
+
+1. A user can configure three timeframes through the UI.
+2. Each timeframe supports independent indicator settings.
+3. The algorithm configuration is saved in PostgreSQL.
+4. The worker loads the saved configuration before starting.
+5. Main and supporting trades maintain independent runtime states.
+6. Supporting trades can enter and exit repeatedly while the primary trend remains valid.
+7. Risk evaluation is independent of candle evaluation frequency.
+8. Duplicate signals do not create duplicate orders.
+9. All decisions and execution events are recorded.
+10. Application restarts do not silently duplicate trading positions.
+11. Paper trading is the default execution mode.
+
+### Out of Scope for Initial Implementation
+
+- AI-generated trading signals.
+- Automatic strategy optimization.
+- Live broker execution.
+- Machine-learning price prediction.
+- Multi-account portfolio management.
