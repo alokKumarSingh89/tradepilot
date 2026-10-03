@@ -18,6 +18,7 @@ The worker process is responsible for safely claiming eligible runs, subscribing
 ### 1. Run claim contract
 
 When a run is eligible to start:
+
 - the worker must acquire a database-level lock or atomic row transition
 - the run transitions from ready to running only once
 - a duplicate claim is rejected with an explicit status message
@@ -27,6 +28,7 @@ When a run is eligible to start:
 The worker subscribes to market-data events for the run’s configured instruments and symbols.
 
 Rules:
+
 - subscription is per run and instrument
 - stale data is flagged and handled as degraded risk state
 - shared market-data adapters remain centralized, but per-run routing is isolated
@@ -36,6 +38,7 @@ Rules:
 Risk evaluation is event-driven and not tied to strategy loop cadence.
 
 Rules:
+
 - risk events may be triggered by order updates, price changes, or lifecycle changes
 - a risk threshold breach results in a persisted event and a safe run state transition
 - a stop request with open positions requires user confirmation before finalization
@@ -45,6 +48,7 @@ Rules:
 The worker handles stop commands idempotently.
 
 Rules:
+
 - a stop request must not create a second exit subject to a duplicate command id
 - if positions remain open, the worker pauses the run and waits for the decision workflow
 - a force-close action is not allowed in this MVP without a user-authorized action
@@ -52,6 +56,7 @@ Rules:
 ### 5. Recovery contract
 
 After application restart:
+
 - runs are reconciled from persisted state
 - interrupted or partial states become recoverable rather than silently resumed
 - all recovery decisions are logged and visible to the user

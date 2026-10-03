@@ -25,6 +25,7 @@ This contract defines the management API for creating, versioning, starting, sto
 Returns all algorithm configurations visible to the current user.
 
 Response shape:
+
 - id
 - name
 - algorithm_type
@@ -39,17 +40,20 @@ Response shape:
 Creates a new algorithm configuration.
 
 Request body:
+
 - name
 - algorithm_type
 - config_payload
 - execution_mode
 
 Validation:
+
 - name must be unique within a user scope
 - required config fields must be present
 - live execution is rejected in MVP unless explicitly approved later
 
 Response:
+
 - created configuration record
 - initial version record
 
@@ -58,6 +62,7 @@ Response:
 Returns full configuration details and version history.
 
 Response includes:
+
 - configuration details
 - current version summary
 - previous versions
@@ -68,10 +73,12 @@ Response includes:
 Saves a new version for an algorithm configuration without mutating the behavior of running instances.
 
 Request body:
+
 - config_payload
 - notes, optional
 
 Behavior:
+
 - a new version record is created
 - active run remains bound to the previous runtime version
 - the config is updated as the latest version for future runs
@@ -81,16 +88,19 @@ Behavior:
 Starts a new run from a saved configuration version.
 
 Request body:
+
 - configuration_version_id
 - execution_mode
 - run_name, optional
 
 Rules:
+
 - duplicate start is rejected when the same configuration is already active for the user
 - a run record is created in a pending or ready state
 - the worker claims the run asynchronously
 
 Response:
+
 - run id
 - status
 - recovery_state
@@ -112,10 +122,12 @@ Initiates a stop sequence. If open positions remain, the API returns a prompt or
 Confirms the user decision for a stop that still has open positions.
 
 Request body:
+
 - decision: keep_position | close_position
 - idempotency_key
 
 Behavior:
+
 - if `keep_position`, the run enters a stopped or pending state without forcibly closing the position
 - if `close_position`, the run coordinates a controlled exit workflow and records the user decision in lifecycle history
 
@@ -128,10 +140,12 @@ Recovers a run after restart or interrupted execution. This action requires expl
 Confirms the user choice after a restart interruption.
 
 Request body:
+
 - decision: recover | restart | discard
 - idempotency_key
 
 Behavior:
+
 - no silent auto-resume is allowed
 - the chosen decision becomes the authoritative recovery action and is logged as a lifecycle event
 

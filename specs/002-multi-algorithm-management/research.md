@@ -7,6 +7,7 @@
 **Rationale**: The feature requires run isolation, concurrency, recovery, and lifecycle events while the product statement explicitly says not to introduce unnecessary microservices. A worker process gives operational isolation for algorithm execution without creating a distributed system or duplicating persistence concerns across services.
 
 **Alternatives considered**:
+
 - Full microservice per algorithm: rejected because it adds deployment complexity, cross-service consistency issues, and unnecessary operational burden for an MVP.
 - Inline execution inside request handlers: rejected because it violates the requirement that the management API must not execute long-running trading loops inside HTTP handlers.
 
@@ -17,6 +18,7 @@
 **Rationale**: Restart recovery, duplicate prevention, and idempotent command handling require a stable source of truth. PostgreSQL is already required by the project, and SQLAlchemy 2 with Alembic fits the platform constraints while preserving a clean persistence model.
 
 **Alternatives considered**:
+
 - In-memory run registry: rejected because it cannot survive restart and cannot provide reliable duplicate prevention.
 - Event-only persistence: rejected because it lacks the auditability and recovery semantics required for trade-state and configuration history.
 
@@ -27,6 +29,7 @@
 **Rationale**: The Feature 002 requirements explicitly require independent state and no shared execution state across runs. This is also essential for user monitoring and safe restart/recovery logic.
 
 **Alternatives considered**:
+
 - Shared mutable runtime object per configuration: rejected because it introduces cross-run contamination and race conditions.
 - Single global risk state: rejected because it would collapse multiple independent algorithm instances into one operational state.
 
@@ -37,6 +40,7 @@
 **Rationale**: The constitution and PRD both require event-driven risk evaluation and independent monitoring. This also reduces the risk of stale data or timing issues causing inconsistent risk checks.
 
 **Alternatives considered**:
+
 - Candle-driven risk checks only: rejected because it fails the requirement for event-driven risk monitoring.
 - Risk checks embedded in the strategy loop: rejected because it couples risk behavior to strategy timing and harms isolation.
 
@@ -47,6 +51,7 @@
 **Rationale**: This matches the product requirement and the trading safety principle: the platform must avoid unintended activation and must preserve operational transparency under recovery scenarios.
 
 **Alternatives considered**:
+
 - Silent auto-resume: rejected because it creates duplicate or hidden execution.
 - Automatic stop on restart: rejected because it discards state without confirmation and risks user surprise.
 
@@ -57,6 +62,7 @@
 **Rationale**: This reduces duplication of market adapters and avoids operational drift, while still enabling per-run resilience and safe filtering of stale or partial data.
 
 **Alternatives considered**:
+
 - One adapter per run: rejected because it duplicates connection and data-handling behavior and can increase failure surface area.
 - Shared mutable market snapshot with no filtering: rejected because it would allow risk and execution events to leak across runs.
 
@@ -67,6 +73,7 @@
 **Rationale**: Preventing duplicate execution requests and race conditions is central to the feature. The system must guard against rapid repeated clicks and process-level duplication after app restarts.
 
 **Alternatives considered**:
+
 - Client-side prevention only: rejected because it does not protect the backend against duplicate requests or workers reclaiming the same run.
 - No command-level idempotency: rejected because it creates double execution risk and makes recovery unpredictable.
 
@@ -77,6 +84,7 @@
 **Rationale**: The requirement set and approved clarifications specifically call for recovery choices after restart and state transitions that preserve user visibility. A minimal set is sufficient for MVP, but the system must not collapse recovery, stop, and failed states into a single ambiguous status.
 
 **Alternatives considered**:
+
 - Single status field with a generic `active` or `inactive` value: rejected because it hides recovery and stop semantics and violates observability requirements.
 - Implicit auto-resume after restart: rejected because it creates duplicate execution risk and silent state changes.
 
@@ -87,6 +95,7 @@
 **Rationale**: The feature explicitly requires duplicate request prevention and database-level concurrency protection where appropriate, and the safety principle requires that repeated requests do not create a second execution.
 
 **Alternatives considered**:
+
 - Client-side deduplication only: rejected because it does not protect the backend or multiple workers.
 - No command ledger: rejected because the system cannot safely reconcile retries or user double-clicks.
 
@@ -97,6 +106,7 @@
 **Rationale**: The PRD and Constitution explicitly require stale data and restart handling to be visible and safe. This is a direct operational risk control for trading workflows.
 
 **Alternatives considered**:
+
 - Continuing on stale data without a warning: rejected because it creates hidden risk and violates transparency requirements.
 - Automatically discarding the run state on restart: rejected because it erases history and makes recovery impossible for users.
 

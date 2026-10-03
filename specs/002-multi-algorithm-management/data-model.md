@@ -16,6 +16,7 @@ Represents the account owner whose algorithm configurations and run records are 
 - status: active/inactive
 
 Validation rules:
+
 - A user record must exist before creating a configuration or run.
 - User-scoped uniqueness is enforced for configuration names.
 
@@ -35,6 +36,7 @@ Represents the user-defined algorithm definition and its version history.
 - current_version_id: UUID
 
 Validation rules:
+
 - Name must be unique per user within the active configuration namespace.
 - Required strategy fields must be present when the configuration is saved.
 - Live execution mode is prohibited in this MVP; the system defaults to paper.
@@ -53,6 +55,7 @@ Represents a saved revision of an algorithm definition.
 - notes: text, nullable
 
 Validation rules:
+
 - version_number increases monotonically for each configuration.
 - Each version is immutable once created.
 - A new version is created on save, but the active run remains coupled to its original runtime version.
@@ -82,6 +85,7 @@ Represents a single algorithm execution instance created from a configuration ve
 - updated_at: timestamp
 
 Validation rules:
+
 - A run is unique to a single configuration version and can have its own status transitions.
 - Duplicate start requests are rejected when the same logical configuration is already active for that user.
 - A run may be flagged as recovered only after user confirmation or a safe reconciliation rule.
@@ -101,6 +105,7 @@ Captures a point-in-time view of a run for auditing and recovery.
 - position_state_payload: JSONB, nullable
 
 Validation rules:
+
 - Record is append-only.
 - Snapshot generation is triggered per run lifecycle transitions and risk threshold events.
 - Snapshot payload must be sufficient to reconstruct run state after restart.
@@ -121,6 +126,7 @@ Represents the active or historical position state for a run.
 - created_at: timestamp
 
 Validation rules:
+
 - Position state is isolated to the run; no cross-run aggregation.
 - A stop or exit action may not silently change state without an explicit decision or workflow.
 
@@ -143,6 +149,7 @@ Represents every order or simulated order intent emitted by or for a run.
 - updated_at: timestamp
 
 Validation rules:
+
 - All order events are immutable after execution and remain audit-visible.
 - Duplicate command ids are rejected by idempotency keys when the same request is retried.
 - Paper mode records order intents without live broker execution.
@@ -164,6 +171,7 @@ Represents the latest risk evaluation for a run.
 - status: enum (normal, warning, breached, recovering, degraded)
 
 Validation rules:
+
 - Risk state is updated only by risk evaluation logic for a single run.
 - Stale market data is treated as a degraded or paused state, not as a silent proceed condition.
 - We need a record of both the latest risk evaluation time and the last fresh price time so stale-data checks are traceable.
@@ -179,6 +187,7 @@ Represents operational state changes or user actions for a run.
 - created_at: timestamp
 
 Validation rules:
+
 - Must be appended in order and never overwritten.
 - Used for auditability, UI timeline, and recovery reasoning.
 
