@@ -16,6 +16,8 @@ Feature 002 remains the sole authority for `AlgorithmRun` lifecycle transitions,
 
 Feature 003 may define risk policies and request actions, but it must not create a competing risk execution mechanism or a competing order submission path. Strategy runtime state may be persisted for audit and recovery, but that state must never independently authorize pause, failure, restart, recovery, or activation of the parent `AlgorithmRun`.
 
+For reversal handling, Feature 003 separates concerns into two independent policy dimensions: existing position disposition (`CLOSE` or `HOLD`) and new entry admission (`BLOCK_NEW_ENTRIES` or `ALLOW_WHEN_NEW_BIAS_CONFIRMED`). `main_trade.reversal_action`, `supporting_trade.reversal_action`, `reversal_entry_policy`, and `auto_reverse_entry=false` remain strategy configuration values, while the Feature 002 lifecycle, risk engine, and execution engine remain authoritative for state transitions, recovery authorization, and actual order execution.
+
 ## Technical Context
 
 **Language/Version**: Python 3.12+, FastAPI, TypeScript 5.x, React 18/19-compatible frontend, SQLAlchemy 2, Alembic
@@ -33,6 +35,8 @@ Feature 003 may define risk policies and request actions, but it must not create
 **Performance Goals**: Support multiple concurrent runs per user with independent trade leg state; event-driven risk and signal evaluation on normalized candle updates; low-latency UI refresh after strategy state or risk transitions
 
 **Constraints**: Paper trading only for MVP; no live broker execution; all strategy evaluation decisions must be deterministic and completed-candle-safe by default; duplicate signals and late/out-of-order data must be suppressed or ignored by policy; run recovery must be explicit rather than silent
+
+**Reversal policy model**: Split reversal handling into independent position-disposition and entry-admission policies. Existing positions use `CLOSE` or `HOLD`; future entries use `BLOCK_NEW_ENTRIES` or `ALLOW_WHEN_NEW_BIAS_CONFIRMED`; `auto_reverse_entry` is fixed to `false` for the MVP and cannot create opposite-direction entries.
 
 **Scale/Scope**: Multi-algorithm portfolio workflows with concurrent paper-trading runs, each supporting one higher-timeframe bias and multiple lower-timeframe supporting legs; not a distributed microservice architecture
 

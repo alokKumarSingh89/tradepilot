@@ -81,7 +81,16 @@ When a valid signal is accepted by the runtime, the strategy engine updates trad
 
 ### 4. Reversal and risk interaction contract
 
-When a higher-timeframe bias reverses, the strategy engine emits a reversal event that the worker forwards to the risk engine. The risk engine decides whether to close, pause, or maintain the current state based on the configured reversal policy and user-confirmed override.
+When a higher-timeframe bias reverses, the strategy engine emits a reversal evaluation result that the worker forwards to the risk engine. The reversal evaluation is split into two independent concerns:
+
+- Position disposition: `main_trade.reversal_action` and `supporting_trade.reversal_action` support only `CLOSE` or `HOLD`.
+- New entry admission: `reversal_entry_policy` supports only `BLOCK_NEW_ENTRIES` or `ALLOW_WHEN_NEW_BIAS_CONFIRMED`.
+
+`CLOSE` generates an exit intent for the affected open position(s); `HOLD` retains open positions under the configured exit and risk rules. `BLOCK_NEW_ENTRIES` prevents new entries after the confirmed reversal, while `ALLOW_WHEN_NEW_BIAS_CONFIRMED` permits future entries only after the configured directional and entry conditions are satisfied and Feature 002 lifecycle authorization and shared risk controls still permit them. `auto_reverse_entry` remains `false` for MVP and must not create opposite-direction entries.
+
+The reversal decision must be idempotent. Repeated evaluation of the same reversal key or same confirmed event must not produce duplicate exit intents. Actual closure is established only using the authoritative execution and position records; `CLOSE` does not imply successful execution.
+
+The shared risk engine remains authoritative for mandate enforcement and position closure validation. `HOLD` never disables mandatory shared risk controls.
 
 ## Persistence contract
 

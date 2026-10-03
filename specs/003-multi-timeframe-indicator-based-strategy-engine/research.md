@@ -110,6 +110,18 @@
 - Replace the worker with a new algorithm family runtime: rejected because it would conflict with the existing architecture and create upgrade risk.
 - Add a parallel orchestration system: rejected because it would duplicate lifecycle and risk responsibilities.
 
+## Decision 11: Separate reversal disposition from entry-admission policy
+
+**Decision**: The approved Feature 003 reversal model is split into two independent concerns: existing position disposition and new entry admission. Existing positions are governed by `main_trade.reversal_action` and `supporting_trade.reversal_action`, which support only `CLOSE` or `HOLD`. New entries are governed by `reversal_entry_policy`, which supports only `BLOCK_NEW_ENTRIES` or `ALLOW_WHEN_NEW_BIAS_CONFIRMED`. The MVP keeps `auto_reverse_entry` fixed at `false`.
+
+**Rationale**: The clarified business requirement explicitly separates the treatment of open positions from future entries and forbids opposite-direction automatic entries. This makes the strategy engine auditable, avoids contradictory defaults, and preserves the authoritative Feature 002 lifecycle and risk enforcement model.
+
+**Alternatives considered**:
+
+- Single reversal action covering both exit and entry decisions: rejected because it collapses two independent concerns and creates contradictory defaults such as pause/close semantics.
+- `PAUSE_NEW_ENTRIES` as a position-exit action: rejected because the approved rule separates position disposition from entry admission and requires explicit new-entry gating rather than modeling a pause as a closure event.
+- Auto-open reverse entries after reversal: rejected because the requirement explicitly forbids an opposite-direction entry from being created automatically.
+
 ## Open technical questions retained for implementation design
 
 - Whether a strategy’s higher-timeframe rule should be expressed as a user-defined rule object or a reusable trend classifier registry.

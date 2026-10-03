@@ -104,17 +104,17 @@
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] Unit test for shared risk budget enforcement and independent leg budgets in `backend/tests/unit/test_trade_leg_risk.py`
-- [ ] T040 [P] [US3] Contract test for reversal and trade-leg state transitions in `backend/tests/integration/test_trade_leg_reversal.py`
-- [ ] T041 [P] [US3] Integration test for supporting-trade entry/exit cap enforcement and immediate close policy in `backend/tests/integration/test_supporting_trade_behaviour.py`
+- [ ] T039 [P] [US3] Unit test for shared risk budget enforcement, independent leg budgets, and the `CLOSE` vs `HOLD` reversal_action semantics in `backend/tests/unit/test_trade_leg_risk.py`
+- [ ] T040 [P] [US3] Contract test for idempotent reversal evaluation, duplicate-exit suppression, and entry-admission policy handling in `backend/tests/integration/test_trade_leg_reversal.py`
+- [ ] T041 [P] [US3] Integration test for per-leg supporting-trade reversal configuration, multi-position leg handling, and `BLOCK_NEW_ENTRIES` gating in `backend/tests/integration/test_supporting_trade_behaviour.py`
 - [ ] T042 [P] [US3] Backend API test for strategy runtime detail and signal history retrieval in `backend/tests/api/test_strategy_runtime_detail_api.py`
 
 ### Implementation for User Story 3
 
 - [ ] T043 [P] [US3] Add `SharedRiskBudget` and its run-scoped aggregation model in `backend/app/db/models/strategy_runtime.py` as policy context for the authoritative shared risk engine
 - [ ] T044 [US3] Implement risk budget evaluation logic that respects per-leg risk and optional shared budget aggregation in `backend/app/domain/strategies/runtime/risk_budget_manager.py`, while leaving enforcement to the shared risk engine
-- [ ] T045 [US3] Implement reversal policy orchestration that closes or pauses supporting trades when the higher-timeframe bias reverses, honoring explicit user override policy in `backend/app/domain/strategies/runtime/reversal_manager.py` and reconciling against authoritative execution records
-- [ ] T046 [US3] Integrate strategy signal output with the Feature 002 risk event and order-intent contracts without creating a new order engine or bypassing the shared execution path
+- [ ] T045 [US3] Implement reversal policy orchestration that separates existing-position disposition from new-entry admission in `backend/app/domain/strategies/runtime/reversal_manager.py`, supporting `CLOSE`/`HOLD` for trade legs and `BLOCK_NEW_ENTRIES`/`ALLOW_WHEN_NEW_BIAS_CONFIRMED` for future entries while reconciling against authoritative execution and position records
+- [ ] T046 [US3] Integrate strategy reversal output with the Feature 002 risk event and order-intent contracts without creating a new order engine, without modeling `PAUSE_NEW_ENTRIES` as a position-exit action, and without bypassing the shared execution path
 - [ ] T047 [US3] Add strategy runtime status and event exposure to the existing run history and monitoring workflows in `backend/app/services/run_lifecycle/` and `frontend/src/features/runs/` without inventing a competing lifecycle model
 - [ ] T048 [US3] Add paper-trading gating for strategy runtime so live execution remains disabled unless explicitly enabled outside this feature
 
